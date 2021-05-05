@@ -4,4 +4,4 @@
 - Global Editor
 - Script Local Editor
 
-![picture] (images/main_menu.png)
+![image] (images/main_menu.png)
