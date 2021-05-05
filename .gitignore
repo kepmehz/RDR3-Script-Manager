@@ -1,0 +1,12 @@
+
+*.log
+*.pdb
+*.ipdb
+*.tlog
+*.obj
+*.recipe
+*.iobj
+*.ipch
+*.asi
+*.db
+ScriptLocalEditor/Source/Solution/.vs/ScriptLocalEditor/v16/.suo
