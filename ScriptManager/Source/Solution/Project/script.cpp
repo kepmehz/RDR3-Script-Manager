@@ -36,12 +36,8 @@ namespace
 			Add(1 + offset * size);
 		}
 
-		int Get() {
-			return *getGlobalPtr(this->index);
-		}
-
-		void Set(int value) {
-			*getGlobalPtr(this->index) = value;
+		uint64_t* Get() {
+			return getGlobalPtr(this->index);
 		}
 
 		void Reset()
@@ -77,12 +73,12 @@ namespace
 			Add(1 + offset * size);
 		}
 
-		int64_t* Get()
+		uint64_t* Get()
 		{
 			if (thread)
-				return reinterpret_cast<int64_t*>(thread->m_stack + (index * sizeof(uintptr_t)));
+				return reinterpret_cast<uint64_t*>(thread->m_stack + (index * sizeof(uintptr_t)));
 
-			static int64_t tmp = 0;
+			static uint64_t tmp = 0;
 			return &tmp;
 		}
 
@@ -154,9 +150,9 @@ namespace sub {
 				int size = NumKeyboard();
 				globalEdit.Add(offset, size);
 			});
-		AddOption(fmt::format("State: {}", globalEdit.Get()), null, [] 
+		AddOption(fmt::format("State: {}", *globalEdit.Get()), null, [] 
 			{
-				globalEdit.Set(NumKeyboard());
+				*globalEdit.Get() = NumKeyboard();
 			});
 		AddOption("Reset", null, []
 			{
