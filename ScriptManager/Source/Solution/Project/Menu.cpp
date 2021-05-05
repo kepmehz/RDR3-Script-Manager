@@ -1,7 +1,7 @@
 #include "script.h"
 
 RGBA* settings_rgba;
-RGBA titlebox = { 0, 50, 190, 255 };
+RGBA titlebox = { 255, 176, 0, 255 };
 RGBA BG = { 0, 0, 0, 190 };
 RGBA optiontext = { 255, 255, 255, 255 };
 RGBA selectedtext = { 0, 0, 0, 255 };
@@ -78,7 +78,7 @@ void menu::background()
 	Game::Print::setupdraw();
 	HUD::SET_TEXT_CENTRE(1);
 	HUD::SET_TEXT_SCALE(0.75f, 0.75f);
-	Game::Print::drawtitlestring("Menya Baes", menuPos.x + 0.1f, 0.015f + menuPos.y);
+	Game::Print::drawtitlestring("Script Manager", menuPos.x + 0.1f, 0.015f + menuPos.y);
 
 	// Draw subtitlebox
 	GRAPHICS::DRAW_RECT(0.1f + menuPos.x, 0.0915f + menuPos.y, 0.205f, 0.025f, 0, 0, 0, 255, 0, 0);
@@ -270,6 +270,15 @@ float NumberKeyboard()
 	if (!MISC::GET_ONSCREEN_KEYBOARD_RESULT())
 		return 0;
 	return static_cast<float>(std::atof(MISC::GET_ONSCREEN_KEYBOARD_RESULT()));
+}
+
+int NumKeyboard()
+{
+	MISC::DISPLAY_ONSCREEN_KEYBOARD(0, "", "", "", "", "", "", 20);
+	while (MISC::UPDATE_ONSCREEN_KEYBOARD() == 0) scriptWait(0);
+	if (!MISC::GET_ONSCREEN_KEYBOARD_RESULT())
+		return 0;
+	return std::atoi(MISC::GET_ONSCREEN_KEYBOARD_RESULT());
 }
 
 bool IsOptionPressed()
@@ -470,12 +479,10 @@ void AddNumber(const std::string& option, int& value, int min, int max, int step
 		else if (IsOptionRPressed())
 		{
 			value < max ? value += step : value = max;
-			func();
 		}
 		else if (IsOptionLPressed())
 		{
 			value > min ? value -= step : value = min;
-			func();
 		}
 	}
 	
@@ -514,12 +521,10 @@ void AddNumber(const std::string& option, float& value, float min, float max, fl
 		else if (IsOptionRPressed())
 		{
 			value < max ? value += step : value = max;
-			func();
 		}
 		else if (IsOptionLPressed())
 		{
 			value > min ? value -= step : value = min;
-			func();
 		}
 	}
 	

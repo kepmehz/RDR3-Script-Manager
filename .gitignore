@@ -10,3 +10,9 @@
 *.asi
 *.db
 ScriptLocalEditor/Source/Solution/.vs/ScriptLocalEditor/v16/.suo
+ScriptManager/Source/Solution/.vs/ScriptManager/v16/.suo
+ScriptManager/Source/Solution/.vs/ScriptLocalEditor/v16/.suo
+*.db-shm
+*.db-wal
+*.opendb
+ScriptManager/Source/Solution/.vs/ScriptLocalEditor/v16/.suo

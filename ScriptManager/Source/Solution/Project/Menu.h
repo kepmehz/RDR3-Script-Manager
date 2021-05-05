@@ -54,6 +54,10 @@ public:
 extern bool null;
 void nullFunc();
 
+extern float NumberKeyboard();
+extern int NumKeyboard();
+extern const char* TextKeyboard();
+
 void AddTitle(const std::string& title);
 void AddOption(const std::string& option, bool& option_code_bool = null, std::function<void()> func = [] {}, int submenu_index = -1, bool show_arrow = 0);
 void AddToggle(const std::string& option, bool& loop_variable, std::function<void()> func = [] {});

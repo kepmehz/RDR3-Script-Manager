@@ -1,4 +1,5 @@
 #include "script.h"
+#include "list.hpp"
 
 namespace
 {
@@ -6,9 +7,115 @@ namespace
 	int sampleHour = 0;
 	float currentTimescale = 1.0f;
 	int testInt = 5;
+	int selectedScripts;
+	int sScriptStackSize;
+	std::string sScriptName = "DEFAULT";
+	rage::atArray<rage::scrThread*>* m_ThreadMap{};
+	std::vector<const char*> ScriptStates = { "~t2~Idle", "~t6~Running", "~e~Killed", "Unknown3", "Unknown4" };
 
 	// Booleans for loops go here:
 	bool playerInvincibility = false, playerInvisible = false;
+
+	struct GlobalEdit
+	{
+		int index;
+
+		void SetIndex(int ind) {
+			index = ind;
+		}
+
+		int GetIndex() const {
+			return this->index;
+		}
+
+		void Add(int offset) {
+			this->index += offset;
+		}
+
+		void Add(int offset, int size) {
+			Add(1 + offset * size);
+		}
+
+		int Get() {
+			return *getGlobalPtr(this->index);
+		}
+
+		void Set(int value) {
+			*getGlobalPtr(this->index) = value;
+		}
+
+		void Reset()
+		{
+			this->index = 0;
+		}
+
+		GlobalEdit() : index(0) {}
+	};
+
+	struct LocalEdit
+	{
+		int index;
+		rage::scrThread* thread;
+
+		void SetIndex(int ind) {
+			index = ind;
+		}
+
+		void SetThread(rage::scrThread* thread) {
+			this->thread = thread;
+		}
+
+		int GetIndex() const {
+			return this->index;
+		}
+
+		void Add(int offset) {
+			this->index += offset;
+		}
+
+		void Add(int offset, int size) {
+			Add(1 + offset * size);
+		}
+
+		int64_t* Get()
+		{
+			if (thread)
+				return reinterpret_cast<int64_t*>(thread->m_stack + (index * sizeof(uintptr_t)));
+
+			static int64_t tmp = 0;
+			return &tmp;
+		}
+
+		void Reset()
+		{
+			this->index = 0;
+			this->thread = nullptr;
+		}
+
+		LocalEdit() : index(0), thread(nullptr) {}
+	};
+
+	GlobalEdit globalEdit;
+	LocalEdit localEdit;
+	uint32_t threadId;
+}
+
+rage::scrThread* GetThread(uint32_t hash)
+{
+	for (const auto& thread : *m_ThreadMap)
+	{
+		if (thread && thread->m_scriptHash == hash)
+		{
+			return thread;
+		}
+	}
+	return nullptr;
+}
+
+void init()
+{
+	auto sc = scanner(nullptr);
+	m_ThreadMap = sc.scan("45 33 F6 85 C9 BD").Sub(4).Rip().Sub(8).As<decltype(m_ThreadMap)>();
 }
 
 namespace sub {
@@ -17,46 +124,146 @@ namespace sub {
 	void MainMenu()
 	{
 		AddTitle("MAIN MENU");
-		AddOption("Sample Self", null, nullFunc, SUB::SAMPLE);
-		AddOption("Sample Teleport", null, nullFunc, SUB::SAMPLETELEPORT);
-		AddOption("Sample World", null, nullFunc, SUB::SAMPLEWORLD);
+		AddOption("Scripts", null, nullFunc, SUB::SCRIPTLIST);
+		AddOption("Global Editor", null, nullFunc, SUB::GLOBALEDITOR);
+		AddOption("Local Editor", null, nullFunc, SUB::LOCALEDITOR);
 		AddOption("Settings", null, nullFunc, SUB::SETTINGS);
 
 		if (menuOpened)
 		{
-			Game::Print::PrintStringBottomCentre("Menyea Baes for RDR2"); // Your opening message goes here.
+			Game::Print::PrintStringBottomCentre("Script Manager by kepmehz");
 			menuOpened = false;
 		}
 	}
 
-	void SampleSelf()
+	void GlobalEditor()
 	{
-		AddTitle("SAMPLE");
-		AddToggle("Invincibility", playerInvincibility, [] { PLAYER::SET_PLAYER_INVINCIBLE(PLAYER::PLAYER_ID(), playerInvincibility); });
-		AddToggle("Invisibility", playerInvisible, [] { ENTITY::SET_ENTITY_VISIBLE(PLAYER::PLAYER_PED_ID(), !playerInvisible); });
-		AddNumber("Options", testInt, 0, 255);
-		AddBreak("Options");
-		for (int i = 0; i <= testInt; i++)
+		AddTitle("GLOBAL EDITOR");
+		AddOption(fmt::format("Index: {}", globalEdit.GetIndex()), null, [] 
+			{
+				globalEdit.SetIndex(NumKeyboard());
+			});
+		AddOption("Add", null, []
+			{
+				globalEdit.Add(NumKeyboard());
+			});
+		AddOption("Add Size", null, [] 
+			{
+				int offset = NumKeyboard();
+				scriptWait(200);
+				int size = NumKeyboard();
+				globalEdit.Add(offset, size);
+			});
+		AddOption(fmt::format("State: {}", globalEdit.Get()), null, [] 
+			{
+				globalEdit.Set(NumKeyboard());
+			});
+		AddOption("Reset", null, []
+			{
+				globalEdit.Reset();
+			});
+	}
+
+	void LocalEditor()
+	{
+		AddTitle("LOCAL EDITOR");
+		AddOption(fmt::format("Thread ID: {}", threadId), null, [] 
+			{
+				threadId = NumKeyboard();
+				if (rage::scrThread* thread = GetThread(SCRIPTS::_GET_HASH_OF_THREAD(threadId))) 
+					localEdit.SetThread(thread);
+			});
+		AddOption(fmt::format("Index: {}", localEdit.GetIndex()), null, []
+			{
+				localEdit.SetIndex(NumKeyboard());
+			});
+		AddOption("Add", null, []
+			{
+				localEdit.Add(NumKeyboard());
+			});
+		AddOption("Add Size", null, []
+			{
+				int offset = NumKeyboard();
+				scriptWait(200);
+				int size = NumKeyboard();
+				localEdit.Add(offset, size);
+			});
+		AddOption(fmt::format("State: {}", *localEdit.Get()), null, []
+			{
+				*localEdit.Get() = NumKeyboard();
+			});
+		AddOption("Reset", null, []
+			{
+				localEdit.Reset();
+				threadId = 0;
+			});
+	}
+
+	void Scripts()
+	{
+		AddTitle("SCRIPTS");
+		AddOption(fmt::format("Total Scripts {}", ScriptList.size()));
+		AddOption("Start Script", null, nullFunc, SUB::START_SCRIPT);
+		for (int i = 0; i < ScriptList.size(); i++)
 		{
-			AddOption("Option " + std::to_string(i));
+			ScriptEntry script = ScriptList.at(i);
+
+			if (rage::scrThread* thread = GetThread(script.hash))
+			{	
+				AddOption
+				(
+					fmt::format("[{}~s~] {}", ScriptStates.at(thread->m_context.m_threadState), script.name), null, [=]
+					{
+						selectedScripts = i;
+					}, SUB::SELECTED_SCRIPT
+				);
+			}
 		}
 	}
 
-	void SampleTeleport()
+	void StartScript()
 	{
-		AddTitle("TELEPORT");
-		AddTele("Valentine", -213.152496f, 691.802979f, 112.37100f);
-		AddTele("Annesburg", 2898.593994f, 1239.85253f, 44.073299f);
-		AddTele("Saint Denis", 2336.584961f, -1106.2358f, 44.737598f);
-		AddTele("Blackwater", -798.338379f, -1238.9395f, 43.537899f);
+		AddTitle("START SCRIPTS");
+		AddOption(fmt::format("Name: {}", sScriptName), null, [] 
+			{
+				sScriptName = TextKeyboard();
+			});
+		AddOption(fmt::format("Stack Size: {}", sScriptStackSize), null, []
+			{
+				sScriptStackSize = NumKeyboard();
+			});
+		AddOption("Start", null, []
+			{
+				while (!SCRIPTS::HAS_SCRIPT_LOADED(sScriptName.c_str()))
+				{
+					SCRIPTS::REQUEST_SCRIPT(sScriptName.c_str());
+					scriptWait(0);
+				}
+				SCRIPTS::START_NEW_SCRIPT(sScriptName.c_str(), sScriptStackSize);
+				Game::Print::PrintStringBottomCentre(fmt::format("Started Script: {} with Size: {}", sScriptName, sScriptStackSize).c_str());
+			});
+		AddOption("Reset", null, [] 
+			{
+				sScriptName = "DEFAULT";
+				sScriptStackSize = 0;
+			});
 	}
 
-	void SampleWorld()
+	void SelectedScript()
 	{
-		sampleHour = CLOCK::GET_CLOCK_HOURS();
-		AddTitle("WORLD");
-		AddNumber("Hour", sampleHour, 0, 24, 1, [] { CLOCK::SET_CLOCK_TIME(sampleHour, 0, 0); });
-		AddNumber("Time Scale", currentTimescale, 0.0f, 1.0f, 0.1f, [] { MISC::SET_TIME_SCALE(currentTimescale); });
+		ScriptEntry script = ScriptList.at(selectedScripts);
+		if (rage::scrThread* thread = GetThread(script.hash))
+		{
+			AddTitle(script.name);
+			AddOption(fmt::format("State: {}", ScriptStates.at(thread->m_context.m_threadState)));
+			AddOption(fmt::format("Thread Id: {}", thread->m_context.m_threadId));
+			AddOption(fmt::format("Stack Size: {}", thread->m_context.m_stackSize));
+			AddOption("~r~Kill", null, [=]
+			{
+				thread->m_context.m_threadState = rage::killed;
+				menu::SetSub_previous();
+			});
+		}
 	}
 
 	void Settings()
@@ -110,45 +317,12 @@ void menu::submenu_switch()
 	case SUB::SETTINGS:					sub::Settings(); break;
 	case SUB::SETTINGS_COLORS:			sub::SettingsColours(); break;
 	case SUB::SETTINGS_COLORS2:			sub::SettingsColours2(); break;
-	case SUB::SAMPLE:					sub::SampleSelf(); break;
-	case SUB::SAMPLEWORLD:				sub::SampleWorld(); break;
-	case SUB::SAMPLETELEPORT:			sub::SampleTeleport(); break;
+	case SUB::GLOBALEDITOR:				sub::GlobalEditor(); break;
+	case SUB::LOCALEDITOR:				sub::LocalEditor(); break;
+	case SUB::SCRIPTLIST:				sub::Scripts(); break;
+	case SUB::START_SCRIPT:				sub::StartScript(); break;
+	case SUB::SELECTED_SCRIPT:			sub::SelectedScript(); break;
 	}
-}
-
-rage::atArray<rage::scrThread*>* m_ThreadMap{};
-
-rage::scrThread* GetThread(uint32_t hash)
-{
-	for (const auto& thread : *m_ThreadMap)
-	{
-		if (thread && thread->m_scriptHash == hash && thread->m_context.m_threadState == rage::running)
-		{
-			return thread;
-		}
-	}
-	return nullptr;
-}
-
-void allocateDebugConsole()
-{
-	AllocConsole();
-	SetConsoleTitleA("Debug");
-	FILE* pCout;
-	freopen_s(&pCout, "CONOUT$", "w", stdout);
-	freopen_s(&pCout, "CONOUT$", "w", stderr);
-	std::cout.clear();
-	std::clog.clear();
-	std::cerr.clear();
-}
-
-void init()
-{
-	allocateDebugConsole();
-	auto sc = new scanner(nullptr);
-	m_ThreadMap = sc->scan("45 33 F6 85 C9 BD").Sub(4).Rip().Sub(8).As<decltype(m_ThreadMap)>();
-	if (m_ThreadMap)
-		std::cout << "Found thread map" << std::endl;
 }
 
 void main()
@@ -157,12 +331,7 @@ void main()
 	srand(static_cast<unsigned int>(GetTickCount64()));
 	init();
 	for(;;)
-	{
-		if (auto testThread = GetThread(MISC::GET_HASH_KEY("startup")))
-		{
-			std::cout << "startup hash" << testThread->m_scriptHash <<std::endl;
-		}
-		
+	{	
 		menu::base();
 		menu::loops();
 		menu::sub_handler();

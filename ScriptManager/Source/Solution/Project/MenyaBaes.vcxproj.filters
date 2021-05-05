@@ -45,6 +45,7 @@
     <ClInclude Include="rdr\rage\atArray.hpp">
       <Filter>rdr\rage</Filter>
     </ClInclude>
+    <ClInclude Include="list.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">

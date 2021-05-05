@@ -4,6 +4,7 @@
 			(C) Alexander Blade 2019
 */
 #pragma once
+#define FMT_HEADER_ONLY
 
 #include <Windows.h>
 #include <string>
@@ -15,6 +16,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <algorithm>
+
+#include "../extern/fmt/include/format.h"
 
 #include "..\..\inc\natives.h"
 #include "..\..\inc\types.h"

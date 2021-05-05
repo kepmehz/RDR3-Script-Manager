@@ -24,6 +24,7 @@
     <ClInclude Include="..\..\inc\types.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="keyboard.h" />
+    <ClInclude Include="list.hpp" />
     <ClInclude Include="memory\scanner.hpp" />
     <ClInclude Include="Menu.h" />
     <ClInclude Include="rdr\rage\atArray.hpp" />
@@ -34,7 +35,7 @@
     <ProjectGuid>{8D82F34A-1D64-465B-84B1-37F89AD3D20B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>NativeTrainer</RootNamespace>
-    <ProjectName>ScriptLocalEditor</ProjectName>
+    <ProjectName>ScriptManager</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -72,7 +73,7 @@
     <TargetExt>.asi</TargetExt>
     <OutDir>bin\$(Configuration)\</OutDir>
     <IntDir>tmp\$(Configuration)\</IntDir>
-    <TargetName>ScriptLocalEditor</TargetName>
+    <TargetName>ScriptManager</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

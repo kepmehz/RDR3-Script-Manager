@@ -20,4 +20,9 @@ namespace Game
 		void PlaySoundFrontend(char* sound_dict, char* sound_name);
 		void PlaySoundFrontend_default(char* sound_name);
 	}
+
+	namespace Misc
+	{
+		extern uint32_t joaat(const char* str);
+	}
 }
