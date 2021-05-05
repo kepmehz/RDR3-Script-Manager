@@ -31,7 +31,6 @@ public:
 	static int setSubDelayed;
 	static int liveTimer;
 
-	static void loops();
 	static void sub_handler();
 	static void submenu_switch();
 

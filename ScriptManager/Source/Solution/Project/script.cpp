@@ -4,17 +4,11 @@
 namespace
 {
 	// Declare/Initialise global variables here.
-	int sampleHour = 0;
-	float currentTimescale = 1.0f;
-	int testInt = 5;
 	int selectedScripts;
 	int sScriptStackSize;
 	std::string sScriptName = "DEFAULT";
 	rage::atArray<rage::scrThread*>* m_ThreadMap{};
 	std::vector<const char*> ScriptStates = { "~t2~Idle", "~t6~Running", "~e~Killed", "Unknown3", "Unknown4" };
-
-	// Booleans for loops go here:
-	bool playerInvincibility = false, playerInvisible = false;
 
 	struct GlobalEdit
 	{
@@ -115,7 +109,6 @@ void init()
 }
 
 namespace sub {
-	// Define submenus here.
 
 	void MainMenu()
 	{
@@ -292,21 +285,8 @@ namespace sub {
 	}
 }
 
-
-void menu::loops()
-{ 
-	/*	Make calls to functions that you want looped over here, e.g. ambient lights, whale guns, explosions, checks, flying deers, etc.
-		Can also be used for (bool) options that are to be executed from many parts of the script. */
-	if (playerInvincibility)
-	{
-		if (!PLAYER::GET_PLAYER_INVINCIBLE(PLAYER::PLAYER_ID()))
-			PLAYER::SET_PLAYER_INVINCIBLE(PLAYER::PLAYER_ID(), playerInvincibility);
-	}
-}
-
 void menu::submenu_switch()
-{ // Make calls to submenus over here.
-
+{
 	switch (currentSub)
 	{
 	case SUB::MAINMENU:					sub::MainMenu(); break;
@@ -329,7 +309,6 @@ void main()
 	for(;;)
 	{	
 		menu::base();
-		menu::loops();
 		menu::sub_handler();
 		scriptWait(0);
 	}
